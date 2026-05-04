@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>🌸 168 斷食小助手</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --pink:#FFB7C5;--pink-light:#FFE4EC;--pink-deep:#FF8FAB;--pink-hot:#FF6B9D;
+  --cream:#FFFDD0;--lavender:#E6E6FA;--lav-deep:#C8C8F0;
+  --peach:#FFDAB9;--mint:#C8F0E8;--sky:#A8D8EA;
+  --text-dark:#5A3E4B;--text-mid:#8B6070;--text-light:#B89AA5;
+  --white:#FFFFFF;--bg:#FFF5F8;
+  --shadow:0 4px 20px rgba(255,143,171,0.25);
+  --shadow-sm:0 2px 12px rgba(255,183,197,0.2);
+}
+html,body{height:100%;background:var(--bg);font-family:'Nunito',sans-serif;color:var(--text-dark);overflow:hidden}
+#root{max-width:430px;margin:0 auto;height:100vh;display:flex;flex-direction:column;
+  background:linear-gradient(160deg,#FFF0F5 0%,#FFFDD0 50%,#F0EEFF 100%);
+  position:relative;overflow:hidden}
+
+/* ── AUTH SCREEN ── */
+#auth-screen{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;padding:30px 24px;gap:20px;
+}
+.auth-logo{font-size:64px;animation:float 3s ease-in-out infinite}
+.auth-title{font-size:28px;font-weight:900;color:var(--text-dark);text-align:center}
+.auth-sub{font-size:14px;color:var(--text-light);font-weight:600;text-align:center}
+.auth-card{
+  width:100%;background:var(--white);border-radius:24px;padding:24px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:14px;
+}
+.auth-tab-row{display:flex;background:#FFF0F5;border-radius:16px;padding:4px;gap:4px}
+.auth-tab{
+  flex:1;padding:10px;border:none;border-radius:12px;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;
+  color:var(--text-light);background:transparent;transition:all .2s;
+}
+.auth-tab.active{background:var(--white);color:var(--pink-deep);box-shadow:var(--shadow-sm)}
+.auth-input{
+  width:100%;padding:14px 16px;border:2px solid #FFE4EC;border-radius:16px;
+  font-family:'Nunito',sans-serif;font-size:15px;color:var(--text-dark);
+  background:var(--white);outline:none;transition:border .2s;
+}
+.auth-input:focus{border-color:var(--pink-deep)}
+.auth-btn{
+  width:100%;padding:15px;border:none;border-radius:20px;cursor:pointer;
+  background:linear-gradient(135deg,var(--pink-deep),var(--pink-hot));
+  color:white;font-family:'Nunito',sans-serif;font-size:16px;font-weight:800;
+  box-shadow:0 4px 16px rgba(255,107,157,0.4);transition:all .2s;
+}
+.auth-btn:active{transform:scale(0.98)}
+.auth-msg{font-size:13px;font-weight:700;text-align:center;padding:8px;border-radius:12px}
+.auth-msg.err{background:#FFE4EC;color:#D4537E}
+.auth-msg.ok{background:var(--mint);color:#2D9E75}
+
+/* ── MAIN APP ── */
+#app{display:none;flex-direction:column;height:100%;overflow:hidden}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 10px;flex-shrink:0;
+}
+.topbar-title{font-size:20px;font-weight:900;color:var(--text-dark)}
+.topbar-sub{font-size:11px;color:var(--text-light);font-weight:700;margin-bottom:2px}
+.user-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:linear-gradient(135deg,var(--pink),var(--lav-deep));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;box-shadow:var(--shadow-sm);cursor:pointer;
+}
+
+/* SCREENS */
+.screens{flex:1;overflow-y:auto;overflow-x:hidden;scroll-behavior:smooth}
+.screens::-webkit-scrollbar{display:none}
+.screen{display:none;padding-bottom:100px;min-height:100%}
+.screen.active{display:block}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  display:flex;background:rgba(255,255,255,0.96);
+  border-top:1px solid rgba(255,183,197,0.3);
+  padding:8px 0 max(16px,env(safe-area-inset-bottom));flex-shrink:0;
+  backdrop-filter:blur(12px);
+}
+.nav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  cursor:pointer;padding:6px 0;border:none;background:none;
+  font-family:'Nunito',sans-serif;
+}
+.nav-icon{font-size:24px;transition:transform .2s}
+.nav-label{font-size:10px;font-weight:700;color:var(--text-light);transition:color .2s}
+.nav-item.active .nav-label{color:var(--pink-deep)}
+.nav-item.active .nav-icon{transform:scale(1.15)}
+
+/* ── FASTING SCREEN ── */
+.mode-row{display:flex;justify-content:center;padding:10px 20px 0}
+.mode-toggle{
+  display:inline-flex;background:var(--white);border-radius:30px;
+  padding:4px;box-shadow:var(--shadow-sm);gap:4px;
+}
+.mode-btn{
+  padding:8px 18px;border-radius:24px;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:13px;font-weight:800;
+  background:transparent;color:var(--text-mid);transition:all .25s;
+}
+.mode-btn.active{background:var(--pink-deep);color:white;box-shadow:0 2px 10px rgba(255,143,171,0.5)}
+
+.ring-wrap{display:flex;justify-content:center;margin:14px 0 8px;position:relative}
+.ring-center{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  text-align:center;pointer-events:none;
+}
+.ring-emoji{font-size:30px;display:block;margin-bottom:2px}
+.ring-time{font-size:32px;font-weight:900;color:var(--text-dark);line-height:1;letter-spacing:-1px}
+.ring-lbl{font-size:11px;color:var(--text-light);font-weight:700;margin-top:3px}
+.ring-phase{font-size:12px;font-weight:800;padding:4px 14px;border-radius:20px;margin-top:6px;display:inline-block}
+.phase-fast{background:var(--lavender);color:#7070D0}
+.phase-eat{background:var(--peach);color:#D08060}
+
+.ring-btns{display:flex;gap:12px;justify-content:center;margin:12px 0 16px}
+.ring-btn{
+  padding:12px 28px;border-radius:30px;border:none;cursor:pointer;
+  font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;transition:all .2s;
+}
+.ring-btn-primary{
+  background:linear-gradient(135deg,var(--pink-deep),var(--pink-hot));
+  color:white;box-shadow:0 4px 16px rgba(255,107,157,0.4);
+}
+.ring-btn-secondary{background:var(--white);color:var(--text-mid);box-shadow:var(--shadow-sm)}
+.ring-btn:active{transform:scale(0.95)}
+
+/* STATS */
+.stats-row{display:flex;gap:10px;padding:0 20px 16px}
+.stat-card{
+  flex:1;background:var(--white);border-radius:18px;padding:14px 10px;
+  text-align:center;box-shadow:var(--shadow-sm);
+}
+.stat-icon{font-size:20px;margin-bottom:4px}
+.stat-val{font-size:18px;font-weight:900;color:var(--text-dark)}
+.stat-lbl{font-size:10px;color:var(--text-light);font-weight:700;margin-top:2px}
+
+/* WATER */
+.section{padding:0 20px 16px}
+.section-title{font-size:15px;font-weight:900;color:var(--text-dark);margin-bottom:10px}
+.water-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.water-cup{
+  width:38px;height:38px;border-radius:10px;
+  border:2.5px solid var(--lav-deep);
+  display:flex;align-items:center;justify-content:center;font-size:18px;
+  cursor:pointer;transition:all .2s;background:var(--white);
+}
+.water-cup.filled{background:linear-gradient(135deg,#A8D8EA,#7EC8E3);border-color:#7EC8E3}
+.water-cup:active{transform:scale(0.88)}
+.water-goal{font-size:12px;color:var(--text-light);font-weight:700;margin-left:4px}
+
+/* WEIGHT CHART */
+.weight-card{
+  background:var(--white);border-radius:20px;padding:16px;
+  box-shadow:var(--shadow-sm);
+}
+.weight-row{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+.weight-cur{font-size:26px;font-weight:900;color:var(--text-dark)}
+.weight-change{font-size:12px;font-weight:800;color:#2D9E75;background:#E6F8F0;padding:5px 10px;border-radius:12px}
+.chart-labels{display:flex;justify-content:space-between;font-size:10px;color:var(--text-light);font-weight:700;margin-top:4px}
+
+/* ── DIARY SCREEN ── */
+.diary-summary{display:flex;gap:8px;padding:0 20px 14px;flex-wrap:wrap}
+.summary-pill{
+  background:white;border-radius:16px;padding:8px 14px;
+  box-shadow:var(--shadow-sm);display:flex;align-items:center;gap:6px;
+}
+.diary-grid{display:flex;flex-direction:column;gap:12px;padding:0 20px}
+.meal-card{
+  background:var(--white);border-radius:20px;overflow:hidden;
+  box-shadow:var(--shadow-sm);display:flex;gap:14px;align-items:center;padding:14px;
+  cursor:pointer;transition:transform .15s;
+}
+.meal-card:active{transform:scale(0.98)}
+.meal-thumb{
+  width:68px;height:68px;border-radius:14px;
+  background:linear-gradient(135deg,var(--pink-light),var(--lavender));
+  display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;
+}
+.meal-info{flex:1;min-width:0}
+.meal-name{font-size:14px;font-weight:900;color:var(--text-dark)}
+.meal-time{font-size:11px;color:var(--text-light);font-weight:700;margin:2px 0 6px}
+.macro-pills{display:flex;gap:5px;flex-wrap:wrap}
+.pill{font-size:10px;font-weight:800;padding:3px 8px;border-radius:20px}
+.pill-kcal{background:#FFE4EC;color:#D4537E}
+.pill-protein{background:#E6F8F0;color:#2D9E75}
+.pill-carb{background:#FFF3E0;color:#E0953A}
+.pill-fat{background:#EDE8FD;color:#7B6FD4}
+
+.add-meal-btn{
+  margin:16px 20px 0;border:2.5px dashed var(--pink-deep);border-radius:20px;
+  padding:18px;display:flex;align-items:center;justify-content:center;gap:8px;
+  cursor:pointer;font-family:'Nunito',sans-serif;font-size:14px;font-weight:800;
+  color:var(--pink-deep);background:rgba(255,143,171,0.08);transition:all .2s;width:calc(100% - 40px);
+}
+.add-meal-btn:active{transform:scale(0.97);background:rgba(255,143,171,0.15)}
+
+.ai-advice{
+  margin:14px 20px 0;background:linear-gradient(135deg,var(--lavender),#D8D8F8);
+  border-radius:18px;padding:14px;display:flex;gap:10px;align-items:flex-start;
+}
+
+/* ── ACHIEVEMENTS SCREEN ── */
+.streak-banner{
+  margin:0 20px 16px;background:linear-gradient(135deg,var(--pink-deep),var(--pink-hot));
+  border-radius:20px;padding:18px 20px;color:white;
+  display:flex;align-items:center;gap:14px;
+}
+.achieve-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 20px}
+.medal-card{
+  background:var(--white);border-radius:20px;padding:18px 12px;
+  text-align:center;box-shadow:var(--shadow-sm);
+}
+.medal-icon{font-size:36px;margin-bottom:8px;display:block}
+.medal-icon.locked{filter:grayscale(1);opacity:0.4}
+.medal-name{font-size:12px;font-weight:900;color:var(--text-dark);margin-bottom:4px}
+.medal-desc{font-size:10px;color:var(--text-light);font-weight:600}
+.medal-badge{display:inline-block;font-size:9px;font-weight:800;padding:3px 8px;border-radius:10px;margin-top:6px}
+.badge-done{background:var(--mint);color:#2D9E75}
+.badge-locked{background:var(--lavender);color:#9090D0}
+
+.progress-card{
+  margin:16px 20px 0;background:var(--white);border-radius:20px;padding:16px;
+  box-shadow:var(--shadow-sm);
+}
+.progress-bar-bg{background:#FFE4EC;border-radius:20px;height:10px;overflow:hidden;margin:8px 0 4px}
+.progress-bar-fill{
+  background:linear-gradient(90deg,var(--pink-deep),var(--pink-hot));
+  height:100%;border-radius:20px;transition:width 1s ease;
+}
+
+/* ── PHOTO MODAL ── */
+.modal-overlay{
+  display:none;position:fixed;inset:0;z-index:300;
+  background:rgba(90,62,75,0.55);backdrop-filter:blur(5px);
+  align-items:flex-end;justify-content:center;
+}
+.modal-overlay.open{display:flex}
+.modal-sheet{
+  background:#FFF8FA;width:min(430px,100%);border-radius:28px 28px 0 0;
+  padding:24px 20px max(32px,env(safe-area-inset-bottom));
+  box-shadow:0 -8px 40px rgba(255,143,171,0.3);
+  max-height:90vh;overflow-y:auto;
+}
+.modal-handle{width:40px;height:4px;background:var(--lav-deep);border-radius:4px;margin:0 auto 20px}
+.modal-title{font-size:18px;font-weight:900;color:var(--text-dark);margin-bottom:16px;text-align:center}
+.photo-drop{
+  border:2.5px dashed var(--pink);border-radius:20px;padding:28px;
+  text-align:center;cursor:pointer;background:var(--pink-light);
+  transition:all .2s;margin-bottom:16px;
+}
+.photo-drop:active{transform:scale(0.98)}
+.ai-loading{text-align:center;padding:20px;display:none}
+.ai-dots{display:flex;gap:8px;justify-content:center;margin-top:10px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--pink-deep);animation:bounce 1.2s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+.nutrition-result{display:none}
+.nutrition-result.show{display:block}
+.nutrition-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.nutrition-card{border-radius:16px;padding:14px 12px;text-align:center}
+.n-icon{font-size:24px;margin-bottom:4px}
+.n-val{font-size:20px;font-weight:900}
+.n-lbl{font-size:11px;font-weight:700;margin-top:2px}
+.nc-kcal{background:#FFE4EC}.nc-kcal .n-val,.nc-kcal .n-lbl{color:#D4537E}
+.nc-protein{background:#E6F8F0}.nc-protein .n-val,.nc-protein .n-lbl{color:#2D9E75}
+.nc-carb{background:#FFF3E0}.nc-carb .n-val,.nc-carb .n-lbl{color:#E0953A}
+.nc-fat{background:#EDE8FD}.nc-fat .n-val,.nc-fat .n-lbl{color:#7B6FD4}
+.vitamin-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.vit-badge{
+  display:flex;align-items:center;gap:5px;background:var(--white);
+  border-radius:20px;padding:5px 12px;box-shadow:var(--shadow-sm);
+  font-size:11px;font-weight:700;color:var(--text-mid);
+}
+.ai-tip-box{
+  background:linear-gradient(135deg,var(--lavender),#D8D8F8);
+  border-radius:16px;padding:14px;font-size:13px;
+  color:#6060C0;font-weight:700;margin-bottom:16px;
+  display:flex;gap:10px;align-items:flex-start;
+}
+.save-btn{
+  width:100%;padding:15px;border:none;border-radius:20px;cursor:pointer;
+  background:linear-gradient(135deg,var(--pink-deep),var(--pink-hot));
+  color:white;font-family:'Nunito',sans-serif;font-size:15px;font-weight:900;
+  box-shadow:0 4px 16px rgba(255,107,157,0.4);transition:all .2s;
+}
+.save-btn:active{transform:scale(0.98)}
+.save-btn:disabled{opacity:0.6;cursor:not-allowed}
+
+/* TOAST */
+.toast{
+  position:fixed;top:24px;left:50%;transform:translateX(-50%) translateY(-80px);
+  background:var(--text-dark);color:white;font-family:'Nunito',sans-serif;
+  font-size:14px;font-weight:700;padding:12px 24px;border-radius:20px;
+  z-index:999;transition:transform .3s ease;white-space:nowrap;
+  box-shadow:0 4px 20px rgba(90,62,75,0.3);
+}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* DECORATIONS */
+.deco-blob{position:absolute;border-radius:50%;opacity:.22;pointer-events:none;z-index:0}
+.deco-star{position:absolute;pointer-events:none;opacity:.45;font-size:14px;animation:twinkle 3s infinite}
+.cat-float{position:absolute;pointer-events:none;font-size:26px;animation:float 4s ease-in-out infinite;z-index:0}
+
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes twinkle{0%,100%{opacity:.3;transform:scale(1)}50%{opacity:.65;transform:scale(1.2)}}
+@keyframes bounce{0%,80%,100%{transform:scale(.8);opacity:.5}40%{transform:scale(1.2);opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* Weight input row */
+.weight-input-row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.weight-input{
+  flex:1;padding:10px 14px;border:2px solid #FFE4EC;border-radius:14px;
+  font-family:'Nunito',sans-serif;font-size:15px;font-weight:700;color:var(--text-dark);
+  background:var(--white);outline:none;
+}
+.weight-input:focus{border-color:var(--pink-deep)}
+.weight-save-btn{
+  padding:10px 18px;border:none;border-radius:14px;cursor:pointer;
+  background:var(--pink-deep);color:white;font-family:'Nunito',sans-serif;
+  font-size:13px;font-weight:800;
+}
+</style>
+</head>
+<body>
+
+<div id="root">
+  <!-- ── AUTH ── -->
+  <div id="auth-screen">
+    <div class="deco-blob" style="width:200px;height:200px;background:#FFB7C5;top:-80px;right:-60px"></div>
+    <div class="deco-blob" style="width:140px;height:140px;background:#E6E6FA;bottom:80px;left:-40px"></div>
+    <div class="auth-logo">🌸</div>
+    <div>
+      <div class="auth-title">168 斷食小助手</div>
+      <div class="auth-sub">記錄每一口，成就更好的自己 ✨</div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tab-row">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">登入</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchAuthTab('signup')">註冊</button>
+      </div>
+      <input class="auth-input" id="auth-email" type="email" placeholder="📧 Email" autocomplete="email"/>
+      <input class="auth-input" id="auth-pass" type="password" placeholder="🔒 密碼（6位以上）" autocomplete="current-password"/>
+      <div id="auth-msg" class="auth-msg" style="display:none"></div>
+      <button class="auth-btn" id="auth-submit-btn" onclick="doAuth()">🌸 登入</button>
+    </div>
+    <div style="font-size:12px;color:var(--text-light);font-weight:600;text-align:center">
+      所有資料安全儲存在雲端<br>任何裝置都能使用 📱💻
+    </div>
+  </div>
+
+  <!-- ── MAIN APP ── -->
+  <div id="app">
+    <div class="deco-blob" style="width:200px;height:200px;background:#FFB7C5;top:-60px;right:-40px;z-index:0"></div>
+    <div class="deco-blob" style="width:120px;height:120px;background:#E6E6FA;bottom:120px;left:-30px;z-index:0"></div>
+    <span class="deco-star" style="top:90px;left:28px;animation-delay:0s">✦</span>
+    <span class="deco-star" style="top:170px;right:58px;animation-delay:1s">✧</span>
+    <span class="cat-float" style="top:270px;right:16px">🐾</span>
+
+    <div class="screens" id="screens">
+      <!-- ── FASTING ── -->
+      <div id="screen-fast" class="screen active">
+        <div class="topbar" style="position:relative;z-index:1">
+          <div>
+            <div class="topbar-sub" id="greet-text">今天也很努力！</div>
+            <div class="topbar-title">斷食追蹤 🌸</div>
+          </div>
+          <div class="user-avatar" onclick="logout()" title="登出">🐱</div>
+        </div>
+
+        <div class="mode-row">
+          <div class="mode-toggle">
+            <button class="mode-btn active" data-fast="16" data-eat="8" onclick="setMode(this)">16:8</button>
+            <button class="mode-btn" data-fast="18" data-eat="6" onclick="setMode(this)">18:6</button>
+            <button class="mode-btn" data-fast="20" data-eat="4" onclick="setMode(this)">20:4</button>
+          </div>
+        </div>
+
+        <div class="ring-wrap">
+          <svg width="220" height="220" viewBox="0 0 220 220" style="filter:drop-shadow(0 6px 22px rgba(255,143,171,.3))">
+            <circle cx="110" cy="110" r="90" fill="none" stroke="#FFE4EC" stroke-width="16"/>
+            <circle id="ring-arc" cx="110" cy="110" r="90" fill="none"
+              stroke="url(#rg)" stroke-width="16" stroke-linecap="round"
+              stroke-dasharray="565.5" stroke-dashoffset="141"
+              transform="rotate(-90 110 110)" style="transition:stroke-dashoffset .8s ease"/>
+            <circle cx="110" cy="110" r="74" fill="rgba(255,240,245,0.85)"/>
+            <circle cx="110" cy="110" r="74" fill="none" stroke="#FFE4EC" stroke-width="1"/>
+            <circle cx="110" cy="20" r="5" fill="#FFB7C5"/>
+            <circle cx="200" cy="110" r="5" fill="#E6E6FA"/>
+            <circle cx="110" cy="200" r="5" fill="#FFB7C5"/>
+            <circle cx="20" cy="110" r="5" fill="#E6E6FA"/>
+            <defs>
+              <linearGradient id="rg" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#FFB7C5"/>
+                <stop offset="100%" stop-color="#FF6B9D"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div class="ring-center">
+            <span class="ring-emoji" id="ring-emoji">🌙</span>
+            <div class="ring-time" id="ring-time">16:00</div>
+            <div class="ring-lbl" id="ring-lbl">剩餘斷食時間</div>
+            <span class="ring-phase phase-fast" id="ring-phase">斷食期 💜</span>
+          </div>
+        </div>
+
+        <div class="ring-btns">
+          <button class="ring-btn ring-btn-secondary" onclick="resetTimer()">重設</button>
+          <button class="ring-btn ring-btn-primary" id="toggle-btn" onclick="toggleTimer()">開始斷食</button>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="stat-icon">🔥</div>
+            <div class="stat-val" id="stat-kcal">0</div>
+            <div class="stat-lbl">今日 kcal</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">💪</div>
+            <div class="stat-val" id="stat-protein">0g</div>
+            <div class="stat-lbl">蛋白質</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-val" id="stat-streak">0</div>
+            <div class="stat-lbl">連續天數</div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">💧 今日飲水</div>
+          <div class="water-row" id="water-row"></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">📈 體重趨勢</div>
+          <div class="weight-card">
+            <div class="weight-row">
+              <div>
+                <div style="font-size:11px;color:var(--text-light);font-weight:700;margin-bottom:2px">本週體重</div>
+                <div class="weight-cur"><span id="weight-display">--</span> <span style="font-size:14px;color:var(--text-light)">kg</span></div>
+              </div>
+              <div class="weight-change" id="weight-change">-- kg</div>
+            </div>
+            <svg id="weight-chart" width="100%" height="70" viewBox="0 0 300 70">
+              <defs>
+                <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#FFB7C5" stop-opacity="0.4"/>
+                  <stop offset="100%" stop-color="#FFB7C5" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <path id="chart-line" d="" fill="none" stroke="#FF8FAB" stroke-width="2.5" stroke-linecap="round"/>
+              <path id="chart-fill" d="" fill="url(#cg)"/>
+            </svg>
+            <div class="chart-labels" id="chart-labels"></div>
+            <div class="weight-input-row">
+              <input class="weight-input" id="weight-input" type="number" step="0.1" min="30" max="200" placeholder="輸入今日體重 kg"/>
+              <button class="weight-save-btn" onclick="saveWeight()">記錄</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── DIARY ── -->
+      <div id="screen-diary" class="screen">
+        <div class="topbar">
+          <div>
+            <div class="topbar-sub" id="diary-date-text">今天</div>
+            <div class="topbar-title">今日日記 📷</div>
+          </div>
+          <div class="user-avatar" onclick="logout()">🌸</div>
+        </div>
+        <div class="diary-summary">
+          <div class="summary-pill">
+            <span>🔥</span>
+            <span style="font-size:13px;font-weight:900;color:#D4537E" id="diary-kcal">0</span>
+            <span style="font-size:11px;color:var(--text-light);font-weight:600">/ 1400 kcal</span>
+          </div>
+          <div class="summary-pill">
+            <span>💪</span>
+            <span style="font-size:13px;font-weight:900;color:#2D9E75" id="diary-protein">0g</span>
+            <span style="font-size:11px;color:var(--text-light);font-weight:600">蛋白質</span>
+          </div>
+        </div>
+        <div class="diary-grid" id="meal-list"></div>
+        <button class="add-meal-btn" onclick="openPhotoModal()">
+          <span style="font-size:22px">📷</span><span>拍照記錄餐點</span>
+        </button>
+        <div class="ai-advice" id="ai-advice">
+          <span style="font-size:20px;flex-shrink:0">🤖</span>
+          <div>
+            <div style="font-size:12px;font-weight:900;color:#6060C0;margin-bottom:4px">AI 膳食建議</div>
+            <div style="font-size:12px;color:#7070C0;font-weight:600;line-height:1.6" id="ai-advice-text">載入中...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ACHIEVEMENTS ── -->
+      <div id="screen-achieve" class="screen">
+        <div class="topbar">
+          <div>
+            <div class="topbar-sub">你好棒！繼續加油！</div>
+            <div class="topbar-title">成就獎牌 🏅</div>
+          </div>
+          <div class="user-avatar" onclick="logout()">⭐</div>
+        </div>
+        <div class="streak-banner">
+          <div style="font-size:40px">🔥</div>
+          <div>
+            <div style="font-size:28px;font-weight:900" id="streak-num">0</div>
+            <div style="font-size:13px;font-weight:700;opacity:.9">天斷食連續紀錄，太厲害了！</div>
+          </div>
+        </div>
+        <div class="achieve-grid" id="achieve-grid"></div>
+        <div class="progress-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:13px;font-weight:900;color:var(--text-dark)">下一個目標 💜</div>
+            <div style="font-size:12px;color:var(--text-light);font-weight:700" id="next-goal-pct">0%</div>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="next-goal-bar" style="width:0%"></div>
+          </div>
+          <div style="font-size:11px;color:var(--text-light);font-weight:700" id="next-goal-text">加油！</div>
+        </div>
+      </div>
+    </div><!-- /screens -->
+
+    <nav class="bottom-nav">
+      <button class="nav-item" id="nav-diary" onclick="switchScreen('diary')">
+        <span class="nav-icon">📖</span><span class="nav-label">今日日記</span>
+      </button>
+      <button class="nav-item active" id="nav-fast" onclick="switchScreen('fast')">
+        <span class="nav-icon">⏳</span><span class="nav-label">斷食計時</span>
+      </button>
+      <button class="nav-item" id="nav-achieve" onclick="switchScreen('achieve')">
+        <span class="nav-icon">🏅</span><span class="nav-label">成就獎牌</span>
+      </button>
+    </nav>
+  </div><!-- /app -->
+</div><!-- /root -->
+
+<!-- ── PHOTO MODAL ── -->
+<div class="modal-overlay" id="photo-modal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">🍽️ 記錄這一餐</div>
+    <div class="photo-drop" id="photo-drop" onclick="simulateUpload()">
+      <div style="font-size:40px;margin-bottom:8px">📸</div>
+      <div style="font-size:14px;font-weight:800;color:var(--pink-deep)">點擊上傳或拍照</div>
+      <div style="font-size:12px;color:var(--text-light);margin-top:4px">AI 自動辨識食材與營養</div>
+    </div>
+    <div class="ai-loading" id="ai-loading">
+      <span style="font-size:24px">🤖</span>
+      <div style="font-size:13px;font-weight:800;color:var(--text-mid);margin-top:8px">AI 正在分析食材中...</div>
+      <div class="ai-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+    <div class="nutrition-result" id="nutrition-result">
+      <div style="background:var(--pink-light);border-radius:16px;padding:12px 14px;margin-bottom:14px;display:flex;gap:10px;align-items:center">
+        <span id="food-emoji" style="font-size:24px">🥘</span>
+        <div>
+          <div style="font-size:14px;font-weight:900;color:var(--text-dark)" id="food-name-display">識別中</div>
+          <div style="font-size:11px;color:var(--text-light);font-weight:700">AI 辨識結果 · 1 份</div>
+        </div>
+      </div>
+      <div class="nutrition-cards">
+        <div class="nutrition-card nc-kcal"><div class="n-icon">🔥</div><div class="n-val" id="r-kcal">0</div><div class="n-lbl">kcal</div></div>
+        <div class="nutrition-card nc-protein"><div class="n-icon">💪</div><div class="n-val" id="r-protein">0g</div><div class="n-lbl">蛋白質</div></div>
+        <div class="nutrition-card nc-carb"><div class="n-icon">🍚</div><div class="n-val" id="r-carb">0g</div><div class="n-lbl">碳水化合物</div></div>
+        <div class="nutrition-card nc-fat"><div class="n-icon">🫒</div><div class="n-val" id="r-fat">0g</div><div class="n-lbl">脂肪</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:900;color:var(--text-dark);margin-bottom:8px">🌿 維生素含量</div>
+      <div class="vitamin-row" id="vitamin-row"></div>
+      <div class="ai-tip-box">
+        <span style="font-size:20px;flex-shrink:0">✨</span>
+        <span id="ai-tip" style="font-size:13px;color:#6060C0;font-weight:700"></span>
+      </div>
+      <button class="save-btn" id="save-meal-btn" onclick="saveMeal()">✓ 儲存這一餐</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── SUPABASE INIT ──
+const { createClient } = supabase;
+const SB_URL = 'https://raupmwembebxoxzmdppe.supabase.co';
+const SB_KEY = 'sb_publishable_84WIu59Amgf_k0GVIJZ4Ow_ivEBpZRR';
+const sb = createClient(SB_URL, SB_KEY);
+
+// ── STATE ──
+let currentUser = null;
+let fastHours = 16, eatHours = 8;
+let remainSecs = 16 * 3600;
+let isFasting = true;
+let timerRunning = false;
+let timerInterval = null;
+let timerStartedAt = null;
+let waterFilled = 0;
+const WATER_GOAL = 8;
+let todayMeals = [];
+let weightHistory = [];
+let streakDays = 0;
+let pendingFood = null;
+let authMode = 'login';
+
+// ── FOOD DATA ──
+const FOODS = [
+  {name:'雞腿便當',emoji:'🍱',kcal:520,protein:38,carb:55,fat:14,
+   vitamins:[{n:'維生素 D',v:'2.4μg'},{n:'維生素 B12',v:'0.9μg'},{n:'葉酸',v:'32μg'}],
+   tip:'蛋白質超棒！纖維稍少，可以加點蔬菜~'},
+  {name:'鮭魚沙拉碗',emoji:'🥗',kcal:380,protein:32,carb:22,fat:16,
+   vitamins:[{n:'維生素 D',v:'8.1μg'},{n:'Omega-3',v:'2.1g'},{n:'維生素 C',v:'24mg'}],
+   tip:'這餐很均衡！鮭魚富含好油脂，讚讚🎉'},
+  {name:'義大利麵',emoji:'🍝',kcal:490,protein:18,carb:72,fat:14,
+   vitamins:[{n:'維生素 B1',v:'0.3mg'},{n:'鐵',v:'3.2mg'},{n:'葉酸',v:'28μg'}],
+   tip:'碳水偏高，下一餐搭配多點蔬菜會更平衡喔~'},
+  {name:'香蕉燕麥',emoji:'🍌',kcal:210,protein:6,carb:42,fat:3,
+   vitamins:[{n:'維生素 B6',v:'0.5mg'},{n:'維生素 C',v:'10mg'},{n:'鉀',v:'450mg'}],
+   tip:'很適合斷食後的第一餐！補充能量又好消化~'},
+  {name:'豆腐味噌湯',emoji:'🍜',kcal:160,protein:12,carb:14,fat:6,
+   vitamins:[{n:'維生素 K',v:'15μg'},{n:'鈣',v:'200mg'},{n:'葉酸',v:'40μg'}],
+   tip:'低卡高蛋白神器！很適合斷食期的進食窗口~'},
+  {name:'希臘優格',emoji:'🥛',kcal:130,protein:18,carb:8,fat:3,
+   vitamins:[{n:'維生素 B12',v:'1.2μg'},{n:'鈣',v:'280mg'},{n:'益生菌',v:'✓'}],
+   tip:'蛋白質密度超高！腸道也會謝謝你的~🦠'},
+];
+
+const ACHIEVEMENTS = [
+  {id:'first_fast',icon:'🥇',name:'初心者',desc:'完成第一次斷食',check:s=>s.total_fasts>=1},
+  {id:'streak_7',icon:'🌟',name:'連續 7 天',desc:'堅持斷食七天',check:s=>s.streak>=7},
+  {id:'water_3',icon:'💧',name:'水分達人',desc:'連續 3 天喝足 8 杯水',check:s=>s.water_streaks>=3},
+  {id:'protein_5',icon:'💪',name:'蛋白質女王',desc:'連續 5 天蛋白質達標',check:s=>s.protein_streaks>=5},
+  {id:'streak_30',icon:'🏆',name:'30 天勇者',desc:'連續斷食 30 天',check:s=>s.streak>=30},
+  {id:'meals_10',icon:'📷',name:'飲食日記',desc:'記錄 10 次餐點',check:s=>s.total_meals>=10},
+];
+
+// ── UTILS ──
+function showToast(msg,ok=true){
+  const t=document.getElementById('toast');
+  t.textContent=(ok?'✅ ':'❌ ')+msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+function today(){return new Date().toISOString().slice(0,10)}
+
+function timeStr(sec){
+  const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;
+  return h+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+function setGreet(){
+  const h=new Date().getHours();
+  const g=h<12?'早安！今天也要加油 ☀️':h<18?'午安！繼續堅持 💪':'晚安！今天也很努力 🌙';
+  document.getElementById('greet-text').textContent=g;
+}
+
+function fmtDate(){
+  const d=new Date();
+  const w=['日','一','二','三','四','五','六'];
+  return `${d.getMonth()+1}月${d.getDate()}日 週${w[d.getDay()]}`;
+}
+
+// ── AUTH ──
+function switchAuthTab(mode){
+  authMode=mode;
+  document.getElementById('tab-login').classList.toggle('active',mode==='login');
+  document.getElementById('tab-signup').classList.toggle('active',mode==='signup');
+  document.getElementById('auth-submit-btn').textContent=mode==='login'?'🌸 登入':'🌸 註冊';
+  document.getElementById('auth-msg').style.display='none';
+}
+
+async function doAuth(){
+  const email=document.getElementById('auth-email').value.trim();
+  const pass=document.getElementById('auth-pass').value;
+  const msg=document.getElementById('auth-msg');
+  const btn=document.getElementById('auth-submit-btn');
+  if(!email||!pass){showMsg('請填寫 Email 和密碼','err');return}
+  btn.textContent='處理中...';btn.disabled=true;
+  let res;
+  if(authMode==='login'){
+    res=await sb.auth.signInWithPassword({email,password:pass});
+  } else {
+    res=await sb.auth.signUp({email,password:pass});
+  }
+  btn.disabled=false;
+  btn.textContent=authMode==='login'?'🌸 登入':'🌸 註冊';
+  if(res.error){showMsg(res.error.message,'err');return}
+  if(authMode==='signup'&&!res.data.session){
+    showMsg('確認信已寄出！請查收 Email 後登入~','ok');return;
+  }
+  currentUser=res.data.user||res.data.session?.user;
+  enterApp();
+}
+
+function showMsg(text,type){
+  const m=document.getElementById('auth-msg');
+  m.textContent=text;m.className='auth-msg '+type;m.style.display='block';
+}
+
+async function logout(){
+  if(!confirm('確定要登出嗎？'))return;
+  await sb.auth.signOut();
+  currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  clearInterval(timerInterval);timerRunning=false;
+}
+
+// ── ENTER APP ──
+async function enterApp(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='flex';
+  setGreet();
+  document.getElementById('diary-date-text').textContent=fmtDate();
+  await Promise.all([loadTodayMeals(),loadWater(),loadWeights(),loadStats()]);
+  buildWater();updateRingDisplay();renderMeals();renderAchievements();
+}
+
+// ── SUPABASE DATA ──
+async function loadTodayMeals(){
+  const {data}=await sb.from('meals').select('*')
+    .eq('user_id',currentUser.id).eq('date',today()).order('created_at');
+  todayMeals=data||[];
+}
+
+async function loadWater(){
+  const {data}=await sb.from('water_logs').select('cups_filled')
+    .eq('user_id',currentUser.id).eq('date',today()).maybeSingle();
+  waterFilled=data?data.cups_filled:0;
+}
+
+async function saveWaterDB(){
+  await sb.from('water_logs').upsert(
+    {user_id:currentUser.id,date:today(),cups_filled:waterFilled},
+    {onConflict:'user_id,date'}
+  );
+}
+
+async function loadWeights(){
+  const {data}=await sb.from('weight_logs').select('*')
+    .eq('user_id',currentUser.id).order('date',{ascending:true}).limit(14);
+  weightHistory=data||[];
+  renderWeightChart();
+}
+
+async function saveWeight(){
+  const val=parseFloat(document.getElementById('weight-input').value);
+  if(!val||val<30||val>300){showToast('請輸入有效體重（30~300）',false);return}
+  await sb.from('weight_logs').upsert(
+    {user_id:currentUser.id,date:today(),weight:val},
+    {onConflict:'user_id,date'}
+  );
+  document.getElementById('weight-input').value='';
+  await loadWeights();showToast('體重已記錄！');
+}
+
+async function loadStats(){
+  const {data}=await sb.from('user_stats').select('*')
+    .eq('user_id',currentUser.id).maybeSingle();
+  if(data){
+    streakDays=data.streak||0;
+    document.getElementById('stat-streak').textContent=streakDays;
+    document.getElementById('streak-num').textContent=streakDays;
+  }
+}
+
+async function saveFastingSession(dur){
+  await sb.from('fasting_logs').insert({
+    user_id:currentUser.id,date:today(),
+    fast_hours:fastHours,duration_minutes:Math.round(dur/60)
+  });
+  // bump streak & total_fasts
+  await sb.rpc('increment_stats',{uid:currentUser.id});
+  await loadStats();
+}
+
+async function saveMealDB(meal){
+  const {error}=await sb.from('meals').insert({
+    user_id:currentUser.id,date:today(),
+    name:meal.name,emoji:meal.emoji,
+    kcal:meal.kcal,protein:meal.protein,carb:meal.carb,fat:meal.fat,
+  });
+  if(error) throw error;
+}
+
+// ── TIMER ──
+function setMode(btn){
+  fastHours=+btn.dataset.fast;eatHours=+btn.dataset.eat;
+  remainSecs=fastHours*3600;isFasting=true;
+  if(timerRunning){clearInterval(timerInterval);timerRunning=false;document.getElementById('toggle-btn').textContent='開始斷食';}
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateRingDisplay();
+}
+
+function toggleTimer(){
+  const btn=document.getElementById('toggle-btn');
+  if(timerRunning){
+    clearInterval(timerInterval);timerRunning=false;
+    const elapsed=(fastHours*3600)-remainSecs;
+    if(isFasting&&elapsed>0) saveFastingSession(elapsed);
+    btn.textContent='繼續斷食';
+  } else {
+    timerRunning=true;timerStartedAt=Date.now();btn.textContent='暫停';
+    timerInterval=setInterval(()=>{
+      remainSecs--;
+      if(remainSecs<=0){
+        isFasting=!isFasting;
+        remainSecs=(isFasting?fastHours:eatHours)*3600;
+        if(isFasting) saveFastingSession(fastHours*3600);
+      }
+      updateRingDisplay();
+    },1000);
+  }
+}
+
+function resetTimer(){
+  clearInterval(timerInterval);timerRunning=false;isFasting=true;
+  remainSecs=fastHours*3600;
+  document.getElementById('toggle-btn').textContent='開始斷食';
+  updateRingDisplay();
+}
+
+function updateRingDisplay(){
+  const total=(isFasting?fastHours:eatHours)*3600;
+  const pct=remainSecs/total;
+  const circ=565.5;
+  document.getElementById('ring-arc').style.strokeDashoffset=circ*pct;
+  document.getElementById('ring-time').textContent=timeStr(remainSecs);
+  if(isFasting){
+    document.getElementById('ring-emoji').textContent='🌙';
+    document.getElementById('ring-lbl').textContent='剩餘斷食時間';
+    document.getElementById('ring-phase').textContent='斷食期 💜';
+    document.getElementById('ring-phase').className='ring-phase phase-fast';
+  } else {
+    document.getElementById('ring-emoji').textContent='🍽️';
+    document.getElementById('ring-lbl').textContent='剩餘進食時間';
+    document.getElementById('ring-phase').textContent='進食期 🧡';
+    document.getElementById('ring-phase').className='ring-phase phase-eat';
+  }
+}
+
+// ── WATER ──
+function buildWater(){
+  const row=document.getElementById('water-row');row.innerHTML='';
+  for(let i=0;i<WATER_GOAL;i++){
+    const c=document.createElement('div');
+    c.className='water-cup'+(i<waterFilled?' filled':'');
+    c.innerHTML=i<waterFilled?'💧':'○';
+    c.onclick=()=>{waterFilled=(i<waterFilled)?i:i+1;buildWater();saveWaterDB();}
+    row.appendChild(c);
+  }
+  const g=document.createElement('span');g.className='water-goal';
+  g.textContent=waterFilled+' / '+WATER_GOAL+' 杯';row.appendChild(g);
+}
+
+// ── WEIGHT CHART ──
+function renderWeightChart(){
+  if(!weightHistory.length){
+    document.getElementById('weight-display').textContent='--';
+    document.getElementById('weight-change').textContent='尚無記錄';
+    return;
+  }
+  const latest=weightHistory[weightHistory.length-1];
+  document.getElementById('weight-display').textContent=latest.weight.toFixed(1);
+  const prev=weightHistory.length>1?weightHistory[weightHistory.length-2]:null;
+  if(prev){
+    const diff=(latest.weight-prev.weight).toFixed(1);
+    const el=document.getElementById('weight-change');
+    el.textContent=(diff>0?'↑ ':'↓ ')+Math.abs(diff)+'kg';
+    el.style.background=diff>0?'#FFE4EC':'#E6F8F0';
+    el.style.color=diff>0?'#D4537E':'#2D9E75';
+  }
+  // Draw chart (up to 7 points)
+  const pts=weightHistory.slice(-7);
+  const vals=pts.map(p=>p.weight);
+  const mn=Math.min(...vals)-1,mx=Math.max(...vals)+1;
+  const W=300,H=60;
+  function cx(i){return pts.length===1?W/2:i*(W/(pts.length-1))}
+  function cy(v){return H-((v-mn)/(mx-mn||1))*H}
+  const coords=pts.map((p,i)=>({x:cx(i),y:cy(p.weight)}));
+  let line='M'+coords.map(c=>c.x+','+c.y).join(' C');
+  // simple bezier
+  const path=coords.map((c,i)=>{
+    if(i===0) return 'M'+c.x+','+c.y;
+    const prev=coords[i-1];
+    const cpx=(c.x+prev.x)/2;
+    return ' C'+cpx+','+prev.y+' '+cpx+','+c.y+' '+c.x+','+c.y;
+  }).join('');
+  document.getElementById('chart-line').setAttribute('d',path);
+  document.getElementById('chart-fill').setAttribute('d',path+' L'+coords[coords.length-1].x+','+H+' L'+coords[0].x+','+H+' Z');
+  const labels=pts.map(p=>p.date.slice(5)).join('</span><span>');
+  document.getElementById('chart-labels').innerHTML='<span>'+labels+'</span>';
+}
+
+// ── MEALS ──
+function getTodayTotals(){
+  return todayMeals.reduce((acc,m)=>({kcal:acc.kcal+m.kcal,protein:acc.protein+m.protein}),{kcal:0,protein:0});
+}
+
+function renderMeals(){
+  const list=document.getElementById('meal-list');list.innerHTML='';
+  if(!todayMeals.length){
+    list.innerHTML='<div style="text-align:center;color:var(--text-light);font-size:13px;font-weight:700;padding:24px">今天還沒有記錄喔！快去拍照吧 📷</div>';
+  } else {
+    todayMeals.forEach(m=>{
+      const div=document.createElement('div');div.className='meal-card';
+      const t=new Date(m.created_at).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+      div.innerHTML=`<div class="meal-thumb">${m.emoji||'🍽️'}</div>
+        <div class="meal-info">
+          <div class="meal-name">${m.name}</div>
+          <div class="meal-time">${t} · 今天</div>
+          <div class="macro-pills">
+            <span class="pill pill-kcal">${m.kcal} kcal</span>
+            <span class="pill pill-protein">${m.protein}g 蛋白質</span>
+            <span class="pill pill-carb">${m.carb}g 碳水</span>
+          </div>
+        </div>`;
+      list.appendChild(div);
+    });
+  }
+  const {kcal,protein}=getTodayTotals();
+  document.getElementById('stat-kcal').textContent=kcal;
+  document.getElementById('stat-protein').textContent=protein+'g';
+  document.getElementById('diary-kcal').textContent=kcal;
+  document.getElementById('diary-protein').textContent=protein+'g';
+  // AI advice
+  let advice='';
+  if(kcal===0) advice='今天還沒有記錄餐點，記得在進食窗口好好補充營養喔！🌸';
+  else if(protein<50) advice=`今天蛋白質還差 ${50-protein}g，晚上一顆蛋加點豆腐會更均衡喔！🥚`;
+  else if(kcal>1400) advice='今天熱量稍多，明天可以多走走路消耗一下喔～💪';
+  else advice='今天飲食很均衡！繼續保持，你很棒！🎉';
+  document.getElementById('ai-advice-text').textContent=advice;
+}
+
+// ── ACHIEVEMENTS ──
+function renderAchievements(){
+  const statsProxy={streak:streakDays,total_fasts:streakDays,water_streaks:waterFilled>=8?1:0,protein_streaks:0,total_meals:todayMeals.length};
+  const grid=document.getElementById('achieve-grid');grid.innerHTML='';
+  let firstLocked=null;
+  ACHIEVEMENTS.forEach(a=>{
+    const done=a.check(statsProxy);
+    if(!done&&!firstLocked) firstLocked=a;
+    const card=document.createElement('div');card.className='medal-card';
+    card.innerHTML=`<span class="medal-icon${done?'':' locked'}">${a.icon}</span>
+      <div class="medal-name">${a.name}</div>
+      <div class="medal-desc">${a.desc}</div>
+      <span class="medal-badge ${done?'badge-done':'badge-locked'}">${done?'✓ 已達成':'🔒 加油！'}</span>`;
+    grid.appendChild(card);
+  });
+  document.getElementById('streak-num').textContent=streakDays;
+  if(firstLocked){
+    const pct=Math.min(100,Math.round((streakDays/7)*100));
+    document.getElementById('next-goal-bar').style.width=pct+'%';
+    document.getElementById('next-goal-pct').textContent=pct+'%';
+    document.getElementById('next-goal-text').textContent=`${firstLocked.name}：${firstLocked.desc}`;
+  }
+}
+
+// ── PHOTO MODAL ──
+function openPhotoModal(){
+  document.getElementById('photo-modal').classList.add('open');
+  document.getElementById('photo-drop').style.display='block';
+  document.getElementById('ai-loading').style.display='none';
+  document.getElementById('nutrition-result').classList.remove('show');
+  pendingFood=null;
+}
+document.getElementById('photo-modal').addEventListener('click',function(e){
+  if(e.target===this) this.classList.remove('open');
+});
+
+function simulateUpload(){
+  document.getElementById('photo-drop').style.display='none';
+  document.getElementById('ai-loading').style.display='block';
+  setTimeout(()=>{
+    document.getElementById('ai-loading').style.display='none';
+    pendingFood=FOODS[Math.floor(Math.random()*FOODS.length)];
+    document.getElementById('food-emoji').textContent=pendingFood.emoji;
+    document.getElementById('food-name-display').textContent=pendingFood.name;
+    document.getElementById('r-kcal').textContent=pendingFood.kcal;
+    document.getElementById('r-protein').textContent=pendingFood.protein+'g';
+    document.getElementById('r-carb').textContent=pendingFood.carb+'g';
+    document.getElementById('r-fat').textContent=pendingFood.fat+'g';
+    document.getElementById('vitamin-row').innerHTML=pendingFood.vitamins.map(v=>
+      `<div class="vit-badge">🌿 ${v.n} · ${v.v}</div>`).join('');
+    document.getElementById('ai-tip').textContent=pendingFood.tip;
+    document.getElementById('nutrition-result').classList.add('show');
+  },2200);
+}
+
+async function saveMeal(){
+  if(!pendingFood) return;
+  const btn=document.getElementById('save-meal-btn');
+  btn.disabled=true;btn.textContent='儲存中...';
+  try{
+    await saveMealDB(pendingFood);
+    await loadTodayMeals();
+    renderMeals();
+    document.getElementById('photo-modal').classList.remove('open');
+    showToast('餐點已記錄！');
+  } catch(e){
+    showToast('儲存失敗，請重試',false);
+  } finally{
+    btn.disabled=false;btn.textContent='✓ 儲存這一餐';
+  }
+}
+
+// ── NAVIGATION ──
+function switchScreen(name){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('screen-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  document.getElementById('screens').scrollTop=0;
+  if(name==='achieve') renderAchievements();
+}
+
+// ── INIT ──
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(session?.user){currentUser=session.user;enterApp();}
+  // listen for auth changes
+  sb.auth.onAuthStateChange((_,sess)=>{
+    if(sess?.user&&!currentUser){currentUser=sess.user;enterApp();}
+  });
+  // keyboard enter on auth
+  document.getElementById('auth-pass').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});
+})();
+</script>
+</body>
+</html>
